@@ -1,0 +1,22 @@
+# requirements.txt
+# Install with: pip install -r requirements.txt
+
+# LLM APIs
+openai>=1.30.0
+anthropic>=0.28.0
+
+# BigCodeBench dependencies
+tempdir
+wget
+appdirs
+
+# Memory manager
+sentence-transformers>=2.7.0
+
+# Data
+datasets>=2.18.0            # for loading DS-1000
+numpy>=1.26.0
+pandas>=2.0.0
+
+# Utilities
+tqdm>=4.66.0
