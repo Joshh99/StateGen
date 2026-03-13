@@ -139,7 +139,7 @@ class SelfPlanningBaseline(BaseBaseline):
 
             logger.info(
                 f"[{task.task_id}] self_planning attempt {attempt + 1}/{MAX_RETRIES}: "
-                f"{'✓' if ok else '✗'}  {last_error[:80] if last_error else ''}"
+                f"{'PASS' if ok else 'FAIL'}  {last_error[:80] if last_error else ''}"
             )
 
             if ok:

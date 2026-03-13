@@ -50,7 +50,7 @@ class DirectGenBaseline(BaseBaseline):
         in_tok, out_tok = self._token_totals(task.task_id)
 
         logger.info(
-            f"[{task.task_id}] direct_gen: {'✓' if ok else '✗'}  "
+            f"[{task.task_id}] direct_gen: {'PASS' if ok else 'FAIL'}  "
             f"tokens={in_tok + out_tok}"
         )
 

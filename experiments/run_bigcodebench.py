@@ -121,8 +121,8 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--base_url",
-        default=LLM_BASE_URL,
-        help="Base URL for openai_compatible providers.",
+        default=None,
+        help="Base URL for openai_compatible providers (default: from config.py).",
     )
     p.add_argument(
         "--api_key",
@@ -434,6 +434,12 @@ def main() -> None:
 
     tracker.save(str(tracker_path))
     logger.info(f"Token events saved to {tracker_path}")
+
+    latency_path = results_dir / "latency_log.jsonl"
+    with open(latency_path, "w") as f:
+        for entry in llm.latency_log:
+            f.write(json.dumps(entry) + "\n")
+    print(f"Latency log saved: {len(llm.latency_log)} entries → {latency_path}")
 
     # ── Phase 2: Remote evaluation (optional) ─────────────────────────────────
     # split name BigCodeBench uses: "instruct" when use_instruct=True, else "complete"

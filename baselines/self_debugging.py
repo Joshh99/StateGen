@@ -115,7 +115,7 @@ class SelfDebuggingBaseline(BaseBaseline):
 
         logger.info(
             f"[{task.task_id}] self_debugging turn 0 (generate): "
-            f"{'✓' if ok else '✗'}  {error[:80] if error else ''}"
+            f"{'PASS' if ok else 'FAIL'}  {error[:80] if error else ''}"
         )
 
         # ── Debugging turns ───────────────────────────────────────
@@ -167,7 +167,7 @@ class SelfDebuggingBaseline(BaseBaseline):
 
             logger.info(
                 f"[{task.task_id}] self_debugging turn {turn} (repair): "
-                f"{'✓' if ok else '✗'}  {error[:80] if error else ''}"
+                f"{'PASS' if ok else 'FAIL'}  {error[:80] if error else ''}"
             )
 
         in_tok, out_tok = self._token_totals(task.task_id)

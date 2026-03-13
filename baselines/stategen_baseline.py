@@ -240,7 +240,7 @@ class StateGenBaseline(BaseBaseline):
         })
 
         logger.info(
-            f"[{task.task_id}] stategen final: {'✓' if ok else '✗'}  "
+            f"[{task.task_id}] stategen final: {'PASS' if ok else 'FAIL'}  "
             f"retries={total_retries}  {error[:60] if error else ''}"
         )
 
@@ -274,7 +274,7 @@ class StateGenBaseline(BaseBaseline):
 
             logger.info(
                 f"[{task.task_id}] stategen final_repair {repair_turn}: "
-                f"{'✓' if ok else '✗'}  {error[:60] if error else ''}"
+                f"{'PASS' if ok else 'FAIL'}  {error[:60] if error else ''}"
             )
 
         in_tok, out_tok = self._token_totals(task.task_id)
@@ -398,7 +398,7 @@ class StateGenBaseline(BaseBaseline):
                 if not from_memory:
                     self.memory.store(state, context, code)
                 logger.info(
-                    f"[{task.task_id}] state {state.index} attempt {attempt}: ✓"
+                    f"[{task.task_id}] state {state.index} attempt {attempt}: PASS"
                 )
                 return True, retries_used, code, state_details
 
@@ -406,7 +406,7 @@ class StateGenBaseline(BaseBaseline):
             retries_used += 1
             logger.info(
                 f"[{task.task_id}] state {state.index} attempt {attempt}: "
-                f"✗  {last_error[:60]}"
+                f"FAIL  {last_error[:60]}"
             )
 
         return False, retries_used, last_code, state_details
