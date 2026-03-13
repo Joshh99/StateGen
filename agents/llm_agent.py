@@ -15,6 +15,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 import litellm
+from litellm.exceptions import ServiceUnavailableError
 
 from config import LLM_MODEL, LLM_BASE_URL, MAX_NEW_TOKENS, TEMPERATURE
 
@@ -43,6 +44,8 @@ _RETRY_DELAYS = [1.0, 2.0, 4.0]
 
 def _is_retryable(exc: Exception) -> bool:
     """Return True if the exception looks like a rate-limit or timeout error."""
+    if isinstance(exc, ServiceUnavailableError):
+        return True
     msg = str(exc).lower()
     return any(token in msg for token in ("rate", "timeout", "429", "524", "too many"))
 
