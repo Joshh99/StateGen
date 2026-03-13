@@ -21,6 +21,8 @@ load_dotenv()
 
 TOGETHER_MODEL: str = "together_ai/meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
 THETAEDGE_MODEL: str = "openai/Qwen/Qwen2.5-Coder-32B-Instruct"
+DEEPSEEK_MODEL: str = "openai/deepseek-coder"
+
 
 _MAX_RETRIES: int = 3
 _RETRY_DELAYS: list[float] = [1.0, 2.0, 4.0]  # seconds before each successive retry
@@ -66,6 +68,8 @@ def generate(
         return _call_together(messages, temperature, max_tokens)
     elif backend == "thetaedge":
         return _call_thetaedge(messages, temperature, max_tokens)
+    elif backend == "deepseek":
+        return _call_deepseek(messages, temperature, max_tokens)
     else:
         raise ValueError(
             f"Unsupported backend: {backend!r}. Valid choices are 'together' or 'thetaedge'."
@@ -132,6 +136,24 @@ def _call_thetaedge(
     )
     return response.choices[0].message.content
 
+def _call_deepseek(
+    messages: list[dict],
+    temperature: float,
+    max_tokens: int,
+) -> str:
+    """Call DeepSeek API (OpenAI-compatible, no retry)."""
+    api_key: Optional[str] = os.getenv("DEEPSEEK_API_KEY")
+    base_url: Optional[str] = os.getenv("DEEPSEEK_BASE_URL")
+
+    response = litellm.completion(
+        model=DEEPSEEK_MODEL,
+        messages=messages,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        api_key=api_key,
+        api_base=base_url,
+    )
+    return response.choices[0].message.content
 
 # ---------------------------------------------------------------------------
 # Smoke test
