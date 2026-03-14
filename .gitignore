@@ -1,11 +1,19 @@
 # Secrets
 .env
 
+# AI tool configs
+.claude/
+
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
 .venv/
 *.egg-info/
+dist/
+
+# Jupyter
+.ipynb_checkpoints/
 
 # Results / outputs
 results/
@@ -15,3 +23,4 @@ memory/
 # Misc
 .DS_Store
 *.jsonl
+*.zip
