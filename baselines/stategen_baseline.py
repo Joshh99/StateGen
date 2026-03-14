@@ -1,21 +1,3 @@
-# baselines/stategen_baseline.py
-# StateGen MDP-based code generation — comparable baseline wrapper.
-#
-# Algorithm:
-#   1. Decompose problem into N states via LLM (1 call).
-#      The decomposition response also contains initial code for each state.
-#   2. For each state:
-#        a. Check memory for a cached pattern.
-#        b. Use the initial code from decomposition (or memory) as attempt 0.
-#        c. quick_run the assembled code so far.
-#        d. If it passes → store in memory, advance.
-#        e. If it fails → ask LLM to FIX only this state (local backtracking).
-#   3. _evaluate() the fully assembled code for final correctness.
-#
-# Token efficiency vs self_debugging:
-#   Repair prompts contain ONLY the failing state's context + error (few lines).
-#   self_debugging re-feeds the ENTIRE program + explanation every repair turn.
-
 import re
 import time
 import logging

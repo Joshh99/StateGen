@@ -1,11 +1,3 @@
-# core/bcb_evaluator.py
-# HTTP client for the BigCodeBench API server (bigcodebench-new/bcb_server).
-# Replaces the offline Docker evaluation workflow with real-time per-task evaluation.
-#
-# Server endpoints used:
-#   GET  /health      — confirm the server is up
-#   POST /evaluate    — submit code, get pass/fail + per-test errors
-
 import logging
 from typing import Dict, Optional, Tuple
 

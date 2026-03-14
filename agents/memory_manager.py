@@ -1,8 +1,3 @@
-# agents/memory_manager.py
-# Stores successful (state, context) → code mappings.
-# Retrieves them by semantic similarity so similar future
-# states can reuse what already worked.
-
 import json
 import logging
 from typing import List, Optional

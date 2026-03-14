@@ -1,13 +1,3 @@
-# agents/llm_agent.py
-# LiteLLM-based LLM wrapper for StateGen.
-#
-# Merged from:
-#   src/llm_backend.py  — LiteLLM calls, Together.ai/ThetaEdge support, retry logic
-#   (joseph) agents/llm_agent.py interface — LLMAgent class, TokenTracker integration
-#
-# All API calls go through litellm.completion() regardless of provider.
-# Supports: together_ai, openai_compatible (DeepSeek), openai, anthropic, thetaedge.
-
 import os
 import time
 import logging
@@ -28,7 +18,6 @@ SYSTEM_DEFAULT = (
     "Write clean, correct, well-structured Python code."
 )
 
-# ── Provider → default model mapping ─────────────────────────────────────────
 _DEFAULT_MODELS = {
     "together_ai":       "together_ai/meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
     "thetaedge":         "openai/Qwen/Qwen2.5-Coder-32B-Instruct",
@@ -37,7 +26,6 @@ _DEFAULT_MODELS = {
     "anthropic":         "claude-sonnet-4-20250514",
 }
 
-# ── Retry config (ported from src/llm_backend.py) ────────────────────────────
 _MAX_RETRIES = 3
 _RETRY_DELAYS = [1.0, 2.0, 4.0]
 
@@ -83,7 +71,6 @@ class LLMAgent:
         self.temperature = temperature
         self.max_tokens  = max_tokens
 
-        # ── Resolve API key ──────────────────────────────────────────────────
         if api_key:
             self._api_key = api_key
         elif self.provider == "together_ai":
@@ -97,7 +84,6 @@ class LLMAgent:
         else:
             self._api_key = os.getenv("OPENAI_API_KEY")
 
-        # ── Resolve base URL ─────────────────────────────────────────────────
         if base_url:
             self._base_url = base_url
         elif self.provider == "thetaedge":
@@ -107,7 +93,6 @@ class LLMAgent:
         else:
             self._base_url = None
 
-        # ── Latency log (TokenTracker doesn't support latency) ────────────────
         self._last_latency_ms: Optional[float] = None
         self._latency_log: list[dict] = []
 
@@ -148,14 +133,11 @@ class LLMAgent:
 
         response = self._call_with_retry(messages)
 
-        # ── Extract text ─────────────────────────────────────────────────────
         text = response.choices[0].message.content or ""
 
-        # ── Extract tokens ───────────────────────────────────────────────────
         input_tokens  = getattr(response.usage, "prompt_tokens", 0) or 0
         output_tokens = getattr(response.usage, "completion_tokens", 0) or 0
 
-        # ── Extract latency ──────────────────────────────────────────────────
         latency_ms = getattr(response, "_response_ms", None)
         self._last_latency_ms = latency_ms
         self._latency_log.append({
@@ -167,7 +149,6 @@ class LLMAgent:
             "timestamp":  time.time(),
         })
 
-        # ── Record tokens via TokenTracker ───────────────────────────────────
         if self.tracker and task_id:
             self.tracker.record(
                 task_id=task_id,

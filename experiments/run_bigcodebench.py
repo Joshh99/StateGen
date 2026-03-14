@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-# experiments/run_bigcodebench.py
-# Main experiment runner for the token-efficiency study on BigCodeBench.
-#
-# Usage examples:
-#   python experiments/run_bigcodebench.py --method all --max_tasks 50
-#   python experiments/run_bigcodebench.py --method all --max_tasks 50 --remote_eval
-#   python experiments/run_bigcodebench.py --method self_debugging --max_tasks 20 --model gpt-4o-mini
 
 import argparse
 import json

@@ -1,7 +1,3 @@
-# baselines/base.py
-# Abstract base class that every baseline (and the StateGen wrapper) must satisfy.
-# Guarantees: same LLM, same executor, same token tracker → fair comparison.
-
 import re
 import logging
 import time

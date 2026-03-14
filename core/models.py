@@ -1,15 +1,7 @@
-# core/models.py
-# Shared data classes used by all components
-# Think of these as the "types" that agents pass to each other
-
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
 
 
-# ─────────────────────────────────────────────
-# STATE
-# One step in the decomposed problem
-# ─────────────────────────────────────────────
 @dataclass
 class State:
     index: int
@@ -21,11 +13,6 @@ class State:
         return f"State({self.index}: {self.description})"
 
 
-# ─────────────────────────────────────────────
-# PROGRAM CONTEXT
-# Everything the LLM needs to know about
-# what has already been written
-# ─────────────────────────────────────────────
 @dataclass
 class ProgramContext:
     code_blocks: List[str] = field(default_factory=list)
@@ -62,10 +49,6 @@ class ProgramContext:
                 self.variables[var] = "object"
 
 
-# ─────────────────────────────────────────────
-# VERIFICATION RESULT
-# Returned by the Execution Engine
-# ─────────────────────────────────────────────
 @dataclass
 class VerificationResult:
     success: bool
@@ -74,10 +57,6 @@ class VerificationResult:
     exec_time: float = 0.0
 
 
-# ─────────────────────────────────────────────
-# CODE PATTERN
-# One entry in the Memory Manager's store
-# ─────────────────────────────────────────────
 @dataclass
 class CodePattern:
     state_description: str
@@ -87,10 +66,6 @@ class CodePattern:
     embedding: Any = None     # numpy array, set by MemoryManager
 
 
-# ─────────────────────────────────────────────
-# SOLVE RESULT
-# Final output of StateController.solve()
-# ─────────────────────────────────────────────
 @dataclass
 class SolveResult:
     success: bool

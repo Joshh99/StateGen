@@ -1,13 +1,4 @@
 #!/usr/bin/env python3
-# experiments/inspect_results.py
-# Human-readable inspection of experiment results.
-# Shows: problem prompt, generated code, BigCodeBench verdict, token usage.
-#
-# Usage:
-#   python experiments/inspect_results.py                          # summary table
-#   python experiments/inspect_results.py --task_id BigCodeBench/13
-#   python experiments/inspect_results.py --method self_debugging --failed
-#   python experiments/inspect_results.py --method all --passed
 
 import argparse
 import json

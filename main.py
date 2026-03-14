@@ -1,12 +1,7 @@
-# main.py
-# Entry point — wire up all agents and run on a single problem.
-# Good for local testing before running the full evaluation.
-
 import logging
 import json
 from pathlib import Path
 
-# ── Configure logging before importing anything else ──
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",

@@ -1,13 +1,4 @@
 #!/usr/bin/env python3
-# experiments/run_ds1000.py
-# Experiment runner for the token-efficiency study on DS-1000.
-#
-# Mirrors run_bigcodebench.py structure for consistency.
-#
-# Usage examples:
-#   python experiments/run_ds1000.py --method all --max_tasks 200
-#   python experiments/run_ds1000.py --method direct_gen --max_tasks 10
-#   python experiments/run_ds1000.py --method direct_gen --max_tasks 2 --dry_run
 
 import argparse
 import json

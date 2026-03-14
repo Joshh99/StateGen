@@ -1,7 +1,3 @@
-# baselines/direct_gen.py
-# Direct generation baseline: one LLM call, no retries, no planning.
-# Simplest possible approach — establishes the floor for comparison.
-
 import time
 import logging
 

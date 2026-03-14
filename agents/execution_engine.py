@@ -1,7 +1,3 @@
-# agents/execution_engine.py
-# Safely runs generated code and tells us if it worked.
-# Uses subprocess isolation — the code CANNOT affect this process.
-
 import subprocess
 import tempfile
 import os

@@ -1,7 +1,3 @@
-# core/state_controller.py
-# The brain of StateGen. Orchestrates all agents.
-# This is where the MDP feedback loop lives.
-
 import re
 import logging
 from dataclasses import dataclass, field

@@ -1,13 +1,3 @@
-# baselines/self_planning.py
-# Self-Planning baseline — faithful implementation of Jiang et al. (2303.06689).
-#
-# Two phases per attempt:
-#   1. Planning:        LLM generates a numbered step-by-step plan
-#   2. Implementation:  LLM generates code guided by the plan
-#
-# On failure: global retry — regenerate BOTH plan and code from scratch.
-# This is the key difference from StateGen (which only retries the failed state).
-
 import time
 import logging
 

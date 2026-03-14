@@ -1,15 +1,3 @@
-# baselines/self_debugging.py
-# Self-Debugging baseline — faithful implementation of Chen et al. (2304.05128).
-#
-# Each debugging turn:
-#   1. Execute code → get error message
-#   2. Explain the code (rubber duck debugging)
-#   3. Generate feedback message
-#   4. Repair: regenerate the WHOLE program with explanation + error as context
-#
-# Key cost driver: every repair call re-feeds the complete program + explanation.
-# On BigCodeBench (avg 1112-char prompts + growing explanation), this grows fast.
-
 import time
 import logging
 

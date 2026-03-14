@@ -1,7 +1,3 @@
-# config.py
-# Central configuration for all StateGen components
-# Change settings here — everything else reads from this file
-
 import os
 
 # ─────────────────────────────────────────────

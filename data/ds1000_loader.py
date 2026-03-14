@@ -1,9 +1,3 @@
-# data/ds1000_loader.py
-# Standalone DS-1000 loader returning list[dict] for the experiment runner.
-#
-# Loads from HuggingFace: "xlangai/DS-1000"
-# Filters to Pandas + Numpy (200-problem subset by default).
-
 import logging
 from typing import List, Optional
 

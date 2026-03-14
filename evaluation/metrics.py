@@ -1,7 +1,3 @@
-# evaluation/metrics.py
-# Compute token efficiency and correctness metrics from run results.
-# Reads the JSONL files produced by run_bigcodebench.py.
-
 import json
 import logging
 from collections import defaultdict

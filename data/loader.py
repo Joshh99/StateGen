@@ -1,7 +1,3 @@
-# data/loader.py
-# Unified data loading for BigCodeBench and DS-1000.
-# Both return List[Task] — same format, different datasets.
-
 import sys
 import logging
 from dataclasses import dataclass, field

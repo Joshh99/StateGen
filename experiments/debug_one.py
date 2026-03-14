@@ -1,13 +1,4 @@
 #!/usr/bin/env python3
-# experiments/debug_one.py
-# Run a single task end-to-end and print every step.
-# Useful for debugging why solutions are failing.
-#
-# Usage:
-#   python experiments/debug_one.py
-#   python experiments/debug_one.py --task_id BigCodeBench/13
-#   python experiments/debug_one.py --task_id BigCodeBench/13 --method self_debugging
-#   python experiments/debug_one.py --task_id BigCodeBench/13 --no_bcb   # skip BCB eval
 
 import argparse
 import os

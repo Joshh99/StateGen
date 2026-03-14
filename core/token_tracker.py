@@ -1,7 +1,3 @@
-# core/token_tracker.py
-# Tracks every LLM call: input tokens, output tokens, call type.
-# Shared across all baselines and StateGen so comparisons are fair.
-
 import json
 import time
 import logging
