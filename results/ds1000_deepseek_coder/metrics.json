@@ -1,0 +1,46 @@
+{
+  "self_debugging": {
+    "pass_at_1": 0.985,
+    "pass_at_1_by_lib": {
+      "Pandas": 0.98,
+      "Numpy": 0.99
+    },
+    "total_tasks": 200,
+    "total_passed": 197,
+    "avg_tokens": 855.4,
+    "avg_latency_ms": 6494.8
+  },
+  "direct_gen": {
+    "pass_at_1": 0.955,
+    "pass_at_1_by_lib": {
+      "Pandas": 0.95,
+      "Numpy": 0.96
+    },
+    "total_tasks": 200,
+    "total_passed": 191,
+    "avg_tokens": 507.6,
+    "avg_latency_ms": 7322.7
+  },
+  "stategen": {
+    "pass_at_1": 0.99,
+    "pass_at_1_by_lib": {
+      "Pandas": 0.98,
+      "Numpy": 1.0
+    },
+    "total_tasks": 200,
+    "total_passed": 198,
+    "avg_tokens": 1950.4,
+    "avg_latency_ms": 9704.5
+  },
+  "self_planning": {
+    "pass_at_1": 0.98,
+    "pass_at_1_by_lib": {
+      "Pandas": 1.0,
+      "Numpy": 0.96
+    },
+    "total_tasks": 200,
+    "total_passed": 196,
+    "avg_tokens": 1144.5,
+    "avg_latency_ms": 5758.0
+  }
+}
