@@ -1,0 +1,13 @@
+{
+  "direct_gen": {
+    "pass_at_1": 1.0,
+    "pass_at_1_by_lib": {
+      "Pandas": 1.0,
+      "Numpy": 1.0
+    },
+    "total_tasks": 4,
+    "total_passed": 4,
+    "avg_tokens": 411.5,
+    "avg_latency_ms": 4858.9
+  }
+}

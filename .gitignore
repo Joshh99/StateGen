@@ -16,7 +16,7 @@ dist/
 .ipynb_checkpoints/
 
 # Results / outputs
-results/
+# results/
 logs/
 memory/
 
@@ -24,3 +24,6 @@ memory/
 .DS_Store
 *.jsonl
 *.zip
+
+# files
+Project Mid-term milestone (graded).pdf
