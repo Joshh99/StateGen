@@ -5,7 +5,8 @@
 openai>=1.30.0
 anthropic>=0.28.0
 
-# BigCodeBench dependencies
+# BigCodeBench (install from PyPI — do not use the bigcodebench-new submodule)
+bigcodebench>=0.2.5
 tempdir
 wget
 appdirs

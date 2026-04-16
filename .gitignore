@@ -12,6 +12,18 @@ results/
 logs/
 memory/
 
+# bigcodebench-new is a local tool only — installed from PyPI via requirements.txt
+bigcodebench-new/
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+terraform/stategen_ssh.pem
+terraform/*.tfstate
+terraform/*.tfstate.*
+stategen_code.zip
+
 # Misc
 .DS_Store
 *.jsonl
