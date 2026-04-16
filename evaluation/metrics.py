@@ -80,15 +80,27 @@ def compute_metrics(
         if n == 0:
             continue
 
+        # call_types that represent intermediate state checks, not final task pass
+        _INTERMEDIATE_TYPES = {"decomp_verify", "decomposition", "memory_hit"}
+
         passed_list = []
         for rec in recs:
             task_id = rec["task_id"]
             if eval_status is not None:
                 passed = eval_status.get(task_id, "fail") == "pass"
             else:
-                # Fallback: use quick_check result from last attempt
+                # Use the first attempt_detail with passed=True that is not an
+                # intermediate state check (decomp_verify, decomposition, memory_hit).
+                # Works for all baseline styles:
+                #   direct_gen/self_planning: entries have no call_type
+                #   self_debugging: call_type in (generation, repair)
+                #   stategen: call_type in (final_eval, final_repair)
                 details = rec.get("attempt_details", [])
-                passed = details[-1].get("passed_quick_check", False) if details else False
+                passed = any(
+                    d.get("passed")
+                    for d in details
+                    if d.get("call_type") not in _INTERMEDIATE_TYPES
+                )
             passed_list.append(passed)
 
         total_tokens = [rec.get("total_tokens", 0) for rec in recs]
