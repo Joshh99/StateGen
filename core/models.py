@@ -69,9 +69,10 @@ class ProgramContext:
 @dataclass
 class VerificationResult:
     success: bool
-    error: Optional[str] = None     # e.g. "NameError: name 'age' not defined"
-    output: Optional[str] = None    # stdout from the execution
+    error: Optional[str] = None       # last N lines of stderr (for LLM prompts)
+    output: Optional[str] = None      # stdout from the execution
     exec_time: float = 0.0
+    traceback: Optional[str] = None   # full stderr, available for logging
 
 
 # ─────────────────────────────────────────────

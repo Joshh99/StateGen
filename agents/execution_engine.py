@@ -9,7 +9,7 @@ import time
 import logging
 from typing import List, Optional
 
-from config import EXEC_TIMEOUT
+from config import EXEC_TIMEOUT, EXEC_TRACEBACK_LINES
 from core.models import VerificationResult
 
 logger = logging.getLogger(__name__)
@@ -123,11 +123,15 @@ class ExecutionEngine:
             elapsed = time.time() - start
 
             if result.returncode != 0:
-                # Clean up the traceback a little for the LLM prompt
-                error_msg = result.stderr.strip().split("\n")[-1]
+                stderr = result.stderr.strip()
+                lines  = stderr.splitlines()
+                # Pass the last N lines to the LLM — enough for context without
+                # overwhelming the prompt.  Full stderr is stored in .traceback.
+                error_msg = "\n".join(lines[-EXEC_TRACEBACK_LINES:]) if lines else "Unknown error"
                 return VerificationResult(
                     success=False,
                     error=error_msg,
+                    traceback=stderr,
                     exec_time=elapsed,
                 )
 
@@ -179,28 +183,40 @@ except Exception as e:
 """
         return self._run_in_sandbox(harness)
 
-    def _check_postcondition(self, code: str, condition: str) -> VerificationResult:
+    def check_postcondition(self, code: str, condition: str) -> VerificationResult:
         """
-        Run a postcondition check after the code executes.
+        Run a structural postcondition assertion after code executes.
 
-        condition examples:
-          "assert 'df' in dir()"
-          "assert isinstance(result, float)"
+        condition may or may not start with 'assert' — both forms are accepted:
+          "callable(my_func)"
+          "assert isinstance(result, (list, dict))"
+          "'df' in dir()"
+
+        Floating-point equality assertions (e.g. result == 3.14) will work but
+        are discouraged; the decompose prompt instructs the LLM to write only
+        structural checks (type, callability, existence).
         """
-        check_code = f"""
+        cond = condition.strip()
+        if not cond.startswith("assert "):
+            cond = f"assert {cond}, 'postcondition failed: {condition}'"
+
+        check_code = f"""\
 {code}
 
-# ── postcondition check ──
+# postcondition check
 try:
-    {condition}
+    {cond}
     print("PASS")
-except AssertionError:
+except AssertionError as _e:
     import sys
-    print("FAIL: {condition}", file=sys.stderr)
+    print(f"FAIL: {{_e}}", file=sys.stderr)
     sys.exit(1)
-except Exception as e:
+except Exception as _e:
     import sys
-    print(f"ERROR: {{e}}", file=sys.stderr)
+    print(f"ERROR: {{_e}}", file=sys.stderr)
     sys.exit(1)
 """
         return self._run_in_sandbox(check_code)
+
+    # Keep old private name for backward compatibility
+    _check_postcondition = check_postcondition

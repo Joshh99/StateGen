@@ -130,9 +130,26 @@ def parse_args() -> argparse.Namespace:
         help="API key (falls back to env var OPENAI_API_KEY / ANTHROPIC_API_KEY).",
     )
     p.add_argument(
+        "--experiment",
+        default=None,
+        metavar="NAME",
+        help=(
+            "Experiment name. Creates results/<NAME>/ automatically and writes a "
+            "manifest.json recording the model, provider, and methods used. "
+            "Recommended naming convention:\n"
+            "  deepseek_original    — 4 original methods, DeepSeek\n"
+            "  deepseek_ablations   — ablation variants, DeepSeek\n"
+            "  gpt4omini_stategen   — stategen on CMU gateway GPT-4o-mini\n"
+            "Overrides --results_dir when set."
+        ),
+    )
+    p.add_argument(
         "--results_dir",
         default=RESULTS_DIR,
-        help="Directory for output JSONL files (default: %(default)s).",
+        help=(
+            "Directory for output JSONL files (default: %(default)s). "
+            "Ignored when --experiment is set."
+        ),
     )
     p.add_argument(
         "--task_ids",
@@ -363,12 +380,52 @@ def _docker_eval_cmd(sanitized_path: Path, subset: str, split: str) -> list:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+def _resolve_results_dir(args) -> Path:
+    """
+    Resolve the output directory.
+
+    Priority:
+      1. --experiment NAME  → results/<NAME>/   (recommended)
+      2. --results_dir DIR  → DIR               (manual override)
+      3. default            → results/
+    """
+    if args.experiment:
+        d = Path("results") / args.experiment
+    else:
+        d = Path(args.results_dir)
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _write_manifest(results_dir: Path, args, methods: list) -> None:
+    """
+    Write a manifest.json next to the results so we always know
+    which model/provider produced this experiment folder.
+    """
+    import datetime
+    manifest = {
+        "experiment":   args.experiment or results_dir.name,
+        "date":         datetime.datetime.now().isoformat(timespec="seconds"),
+        "model":        args.model,
+        "provider":     args.provider,
+        "base_url":     args.base_url,
+        "subset":       args.subset,
+        "max_tasks":    args.max_tasks,
+        "methods":      methods,
+        "bcb_server":   args.bcb_server,
+    }
+    path = results_dir / "manifest.json"
+    with open(path, "w") as f:
+        json.dump(manifest, f, indent=2)
+    logger.info(f"Manifest written → {path}")
+
+
 def main() -> None:
     args = parse_args()
     _setup_logging(LOG_LEVEL, LOG_FILE)
 
-    results_dir = Path(args.results_dir)
-    results_dir.mkdir(parents=True, exist_ok=True)
+    results_dir = _resolve_results_dir(args)
+    logger.info(f"Results directory: {results_dir.resolve()}")
 
     # ── Load tasks ────────────────────────────────────────────────────────────
     logger.info(
@@ -413,6 +470,9 @@ def main() -> None:
         methods_to_run = list(ALL_BASELINES.items())
     else:
         methods_to_run = [(m, ALL_BASELINES[m]) for m in args.method]
+
+    # Write manifest so we know exactly what produced this results folder
+    _write_manifest(results_dir, args, [m for m, _ in methods_to_run])
 
     # ── Phase 1: Generate solutions ───────────────────────────────────────────
     total_start = time.time()

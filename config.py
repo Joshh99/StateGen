@@ -22,13 +22,15 @@ MAX_RETRIES       = 3      # retries per state before giving up
 # ─────────────────────────────────────────────
 # EXECUTION ENGINE
 # ─────────────────────────────────────────────
-EXEC_TIMEOUT      = 5.0    # seconds per code run
+EXEC_TIMEOUT         = 5.0    # seconds per code run (fresh subprocess)
+EXEC_TRACEBACK_LINES = 15     # lines of stderr to include in LLM repair prompts
 
 # ─────────────────────────────────────────────
 # MEMORY MANAGER
 # ─────────────────────────────────────────────
 EMBEDDING_MODEL   = "all-MiniLM-L6-v2"   # sentence-transformers
 SIM_THRESHOLD     = 0.85                  # cosine similarity cutoff
+MEMORY_TOP_K      = 3                     # patterns to inject as few-shot examples
 MEMORY_FILE       = "memory/patterns.json"
 
 # ─────────────────────────────────────────────

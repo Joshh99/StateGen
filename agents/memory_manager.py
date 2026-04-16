@@ -9,10 +9,23 @@ from typing import List, Optional
 import numpy as np
 from pathlib import Path
 
-from config import EMBEDDING_MODEL, SIM_THRESHOLD, MEMORY_FILE
+from config import EMBEDDING_MODEL, SIM_THRESHOLD, MEMORY_TOP_K, MEMORY_FILE
 from core.models import State, ProgramContext, CodePattern
 
 logger = logging.getLogger(__name__)
+
+# Libraries whose names are injected as tags into the embedding query so that
+# a Pandas solution is never retrieved for a PyTorch state (and vice-versa).
+_KNOWN_LIBRARIES = [
+    "pandas", "numpy", "scipy", "sklearn", "scikit-learn",
+    "torch", "pytorch", "tensorflow", "keras",
+    "matplotlib", "seaborn", "plotly",
+    "statsmodels", "xarray",
+    "PIL", "pillow", "cv2", "opencv",
+    "requests", "flask", "fastapi", "sqlalchemy",
+    "nltk", "spacy", "transformers", "huggingface",
+    "boto3", "s3", "gcp", "azure",
+]
 
 
 class MemoryManager:
@@ -43,33 +56,50 @@ class MemoryManager:
 
     def lookup(self, state: State, context: ProgramContext) -> Optional[str]:
         """
-        Search for a matching code pattern.
+        Return the single best-matching code pattern, or None.
+        Use lookup_top_k() to get multiple patterns for few-shot injection.
+        """
+        results = self.lookup_top_k(state, context, k=1)
+        return results[0] if results else None
 
-        Returns the cached code string if a match is found,
-        otherwise returns None.
+    def lookup_top_k(
+        self, state: State, context: ProgramContext, k: int = MEMORY_TOP_K
+    ) -> List[str]:
+        """
+        Return up to k verified code patterns whose embedding similarity exceeds
+        the threshold, sorted by similarity (best first).
+
+        Library tags are embedded in the query, so a Pandas pattern will not be
+        retrieved for a PyTorch state even if their descriptions are otherwise similar.
         """
         if not self.patterns:
-            return None
+            return []
 
-        query        = self._query_text(state, context)
-        query_emb    = self._embed(query)
-        best_code    = None
-        best_sim     = 0.0
+        query     = self._query_text(state, context)
+        query_emb = self._embed(query)
 
+        scored: List[tuple] = []
         for pattern in self.patterns:
             if pattern.embedding is None:
                 continue
             sim = self._cosine(query_emb, pattern.embedding)
-            if sim > best_sim:
-                best_sim  = sim
-                best_code = pattern.code
+            if sim >= self.threshold:
+                scored.append((sim, pattern.code))
 
-        if best_sim >= self.threshold:
-            logger.info(f"Memory hit (similarity={best_sim:.2f}) for {state}")
-            return best_code
+        scored.sort(key=lambda x: -x[0])
+        top = [code for _, code in scored[:k]]
 
-        logger.debug(f"No memory hit (best={best_sim:.2f}) for {state}")
-        return None
+        if top:
+            logger.info(
+                f"Memory top-{k}: {len(top)} hit(s) "
+                f"(best={scored[0][0]:.2f}) for {state}"
+            )
+        else:
+            logger.debug(
+                f"No memory hit for {state} "
+                f"(best={scored[0][0]:.2f})" if scored else f"(no patterns)"
+            )
+        return top
 
     def store(self, state: State, context: ProgramContext, code: str):
         """
@@ -114,8 +144,23 @@ class MemoryManager:
     # ─────────────────────────────────────────
 
     def _query_text(self, state: State, context: ProgramContext) -> str:
-        """Combine state description + context signature into one string."""
-        return f"{state.description} | {self._context_sig(context)}"
+        """
+        Build the embedding query string.
+
+        Library tags (e.g. [pandas] [numpy]) are prepended so that cosine
+        similarity is penalised across library boundaries — a Pandas import
+        pattern won't be retrieved for a PyTorch state.
+        """
+        combined = f"{state.description} {self._context_sig(context)}"
+        tags     = self._detect_libraries(combined)
+        tag_str  = " ".join(f"[{t}]" for t in tags)
+        return f"{tag_str} {state.description} | {self._context_sig(context)}".strip()
+
+    @staticmethod
+    def _detect_libraries(text: str) -> List[str]:
+        """Return known library names found in text (lowercased comparison)."""
+        text_lower = text.lower()
+        return [lib for lib in _KNOWN_LIBRARIES if lib in text_lower]
 
     @staticmethod
     def _context_sig(context: ProgramContext) -> str:
