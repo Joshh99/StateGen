@@ -153,4 +153,9 @@ def extract_code(text: str) -> str:
     if match:
         return match.group(1).strip()
 
+    # Unclosed fence (model hit max_tokens)
+    match = re.search(r"```python\s*\n(.*)", text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+
     return text

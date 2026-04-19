@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -126,6 +127,13 @@ def parse_args() -> argparse.Namespace:
     )
     return p.parse_args()
 
+
+def extract_setup_code(prompt: str) -> str:
+    """Extract setup code from the first <code>...</code> block in DS-1000 prompts."""
+    match = re.search(r"<code>\s*\n(.*?)</code>", prompt, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return ""
 
 # ── DS-1000 evaluation ───────────────────────────────────────────────────────
 
@@ -263,7 +271,10 @@ def run_method(
                 continue
 
             # Evaluate solution against DS-1000 test harness
-            passed, error = evaluate_ds1000(result.solution, ds_task["test_code"])
+            # passed, error = evaluate_ds1000(result.solution, ds_task["test_code"])
+            setup = extract_setup_code(ds_task["prompt"])
+            full_solution = f"{setup}\n{result.solution}" if setup else result.solution
+            passed, error = evaluate_ds1000(full_solution, ds_task["test_code"])
 
             record = {
                 "task_id":            task_id,
