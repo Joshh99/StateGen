@@ -24,6 +24,8 @@ _DEFAULT_MODELS = {
     "openai_compatible": "deepseek-coder",
     "openai":            "gpt-4o",
     "anthropic":         "claude-sonnet-4-20250514",
+    "azure":             "gpt-4o-stategen",
+    "gemini":            "gemini/gemini-2.5-flash",
 }
 
 _MAX_RETRIES = 3
@@ -71,6 +73,7 @@ class LLMAgent:
         self.temperature = temperature
         self.max_tokens  = max_tokens
 
+        # --- API key resolution ---
         if api_key:
             self._api_key = api_key
         elif self.provider == "together_ai":
@@ -81,17 +84,27 @@ class LLMAgent:
             self._api_key = os.getenv("ANTHROPIC_API_KEY")
         elif self.provider == "openai_compatible":
             self._api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY")
+        elif self.provider == "azure":
+            self._api_key = os.getenv("AZURE_API_KEY")
+        elif self.provider == "gemini":
+            self._api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
         else:
             self._api_key = os.getenv("OPENAI_API_KEY")
 
+        # --- Base URL resolution ---
         if base_url:
             self._base_url = base_url
         elif self.provider == "thetaedge":
             self._base_url = os.getenv("THETAEDGE_BASE_URL")
         elif self.provider == "openai_compatible":
             self._base_url = os.getenv("LLM_BASE_URL", LLM_BASE_URL)
+        elif self.provider == "azure":
+            self._base_url = os.getenv("AZURE_API_BASE", "https://stategen.openai.azure.com/")
         else:
             self._base_url = None
+
+        # Azure API version (only used when provider == "azure")
+        self._api_version = os.getenv("AZURE_API_VERSION", "2024-12-01-preview")
 
         self._last_latency_ms: Optional[float] = None
         self._latency_log: list[dict] = []
@@ -177,6 +190,8 @@ class LLMAgent:
             "openai_compatible": "",
             "openai": "",
             "anthropic": "",
+            "azure": "azure/",
+            "gemini": "",
         }
         prefix = PROVIDER_PREFIXES.get(self.provider, "")
         model_str = f"{prefix}{self.model}" if prefix and not self.model.startswith(prefix) else self.model
@@ -195,6 +210,8 @@ class LLMAgent:
                 }
                 if self._base_url:
                     kwargs["api_base"] = self._base_url
+                if self.provider == "azure":
+                    kwargs["api_version"] = self._api_version
 
                 return litellm.completion(**kwargs)
 
