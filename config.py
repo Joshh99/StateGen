@@ -10,7 +10,7 @@ import os
 LLM_PROVIDER      = os.getenv("LLM_PROVIDER", "openai_compatible")          # "openai" | "anthropic" | "openai_compatible"
 LLM_MODEL         = os.getenv("LLM_MODEL", "deepseek-coder")               # model name for the chosen provider
 LLM_BASE_URL      = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")  # DeepSeek endpoint
-MAX_NEW_TOKENS    = 2048
+MAX_NEW_TOKENS    = int(os.getenv("MAX_NEW_TOKENS", "2048"))  # raise for thinking models (e.g. 16384 for gemini-2.5-pro)
 TEMPERATURE       = 0.2    # lower = more deterministic
 TOP_P             = 0.95
 

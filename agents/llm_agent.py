@@ -48,7 +48,7 @@ class LLMAgent:
         so the existing StateController works without changes.
     """
 
-    PROVIDERS = ("openai", "anthropic", "openai_compatible")
+    PROVIDERS = ("openai", "anthropic", "openai_compatible", "azure_openai")
 
     def __init__(
         self,
@@ -56,33 +56,46 @@ class LLMAgent:
         provider: str = "openai",
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
+        api_version: Optional[str] = None,
         tracker=None,                     # core.token_tracker.TokenTracker
         temperature: float = TEMPERATURE,
         max_tokens: int = MAX_NEW_TOKENS,
+        request_timeout: int = 120,
     ):
         if provider not in self.PROVIDERS:
             raise ValueError(f"provider must be one of {self.PROVIDERS}, got '{provider}'")
 
-        self.model       = model
-        self.provider    = provider
-        self.tracker     = tracker
-        self.temperature = temperature
-        self.max_tokens  = max_tokens
+        self.model           = model
+        self.provider        = provider
+        self.tracker         = tracker
+        self.temperature     = temperature
+        self.max_tokens      = max_tokens
+        self.request_timeout = request_timeout
 
         # Resolve API key from arg → env var
-        # For openai_compatible (e.g. DeepSeek), check DEEPSEEK_API_KEY first
         if api_key is None:
             if provider == "anthropic":
                 api_key = os.getenv("ANTHROPIC_API_KEY")
             elif provider == "openai_compatible":
                 api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY")
+            elif provider == "azure_openai":
+                api_key = os.getenv("AZURE_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
             else:
                 api_key = os.getenv("OPENAI_API_KEY")
 
         # Build the client
-        if provider in ("openai", "openai_compatible"):
+        if provider == "azure_openai":
+            from openai import AzureOpenAI
+            self._client = AzureOpenAI(
+                api_key=api_key,
+                azure_endpoint=base_url,
+                api_version=api_version or "2024-12-01-preview",
+                timeout=self.request_timeout,
+            )
+        elif provider in ("openai", "openai_compatible"):
             from openai import OpenAI
-            self._client = OpenAI(api_key=api_key, base_url=base_url)
+            self._client = OpenAI(api_key=api_key, base_url=base_url,
+                                  timeout=self.request_timeout)
         else:  # anthropic
             from anthropic import Anthropic
             self._client = Anthropic(api_key=api_key)
@@ -190,7 +203,7 @@ Postconditions: <comma-separated list>
     # ─────────────────────────────────────────
 
     def _call_api(self, prompt: str, system: str) -> _GenerationResult:
-        if self.provider in ("openai", "openai_compatible"):
+        if self.provider in ("openai", "openai_compatible", "azure_openai"):
             return self._call_openai(prompt, system)
         else:
             return self._call_anthropic(prompt, system)

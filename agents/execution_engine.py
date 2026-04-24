@@ -3,6 +3,7 @@
 # Uses subprocess isolation — the code CANNOT affect this process.
 
 import subprocess
+import sys
 import tempfile
 import os
 import time
@@ -115,7 +116,7 @@ class ExecutionEngine:
         try:
             start = time.time()
             result = subprocess.run(
-                ["python", tmp],
+                [sys.executable, tmp],
                 capture_output=True,
                 text=True,
                 timeout=self.timeout,
@@ -198,7 +199,8 @@ except Exception as e:
         """
         cond = condition.strip()
         if not cond.startswith("assert "):
-            cond = f"assert {cond}, 'postcondition failed: {condition}'"
+            msg = condition.replace("\\", "\\\\").replace('"""', '\\"\\"\\"')
+            cond = f'assert {cond}, """{msg}"""'
 
         check_code = f"""\
 {code}

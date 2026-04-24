@@ -144,10 +144,13 @@ class BaseBaseline(ABC):
 
 def extract_code(text: str) -> str:
     """
-    Strip markdown fences from LLM output and return clean Python code.
-    Handles ```python ... ```, ``` ... ```, and raw code.
+    Strip markdown fences and reasoning tags from LLM output and return clean Python code.
+    Handles ```python ... ```, ``` ... ```, <think>...</think> (Phi-4, DeepSeek-R1), and raw code.
     """
     text = text.strip()
+
+    # Strip reasoning chain from thinking models (Phi-4-reasoning, DeepSeek-R1, etc.)
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
     match = re.search(r"```python\s*\n(.*?)```", text, re.DOTALL)
     if match:

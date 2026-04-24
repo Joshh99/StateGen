@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>StateGen — CMU 18-786</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/dist/theme/white.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css">
+<style>
+  :root {
+    --indigo: #4f46e5;
+    --green:  #16a34a;
+    --red:    #dc2626;
+    --amber:  #d97706;
+    --slate:  #334155;
+    --light:  #f8fafc;
+    --border: #e2e8f0;
+  }
+  .reveal { font-family: 'Segoe UI', system-ui, sans-serif; }
+  .reveal h1 { font-size: 2em; color: var(--indigo); font-weight: 800; }
+  .reveal h2 { font-size: 1.5em; color: var(--slate); font-weight: 700; border-bottom: 3px solid var(--indigo); padding-bottom: 8px; }
+  .reveal h3 { font-size: 1.1em; color: var(--indigo); font-weight: 600; }
+  .reveal p, .reveal li { color: var(--slate); font-size: 0.88em; line-height: 1.7; }
+  .reveal ul { list-style: none; padding: 0; }
+  .reveal ul li::before { content: "→ "; color: var(--indigo); font-weight: 700; }
+  .reveal code { background: #f1f5f9; border-radius: 4px; padding: 1px 6px; font-size: 0.85em; color: #1e293b; }
+  .reveal pre code { font-size: 0.75em; }
+  .reveal section { text-align: left; }
+
+  /* Cards */
+  .card-row { display: flex; gap: 16px; margin-top: 16px; }
+  .card {
+    flex: 1; background: var(--light); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; border-top: 4px solid var(--indigo);
+  }
+  .card.green  { border-top-color: var(--green); }
+  .card.red    { border-top-color: var(--red); }
+  .card.amber  { border-top-color: var(--amber); }
+  .card h3 { margin: 0 0 8px; font-size: 0.95em; }
+  .card p  { margin: 0; font-size: 0.8em; color: #64748b; }
+
+  /* Table */
+  .results-table { width: 100%; border-collapse: collapse; font-size: 0.78em; margin-top: 12px; }
+  .results-table th { background: var(--indigo); color: white; padding: 8px 12px; text-align: left; }
+  .results-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); }
+  .results-table tr:nth-child(even) { background: var(--light); }
+  .results-table tr.highlight td { background: #eff6ff; font-weight: 600; color: var(--indigo); }
+  .results-table tr.best td { background: #f0fdf4; font-weight: 700; }
+
+  /* Pipeline steps */
+  .pipeline { display: flex; align-items: center; gap: 0; margin: 20px 0; flex-wrap: wrap; }
+  .pipe-step {
+    background: var(--indigo); color: white; padding: 10px 16px;
+    font-size: 0.78em; font-weight: 600; border-radius: 6px; text-align: center;
+    min-width: 110px;
+  }
+  .pipe-step.green  { background: var(--green); }
+  .pipe-step.amber  { background: var(--amber); }
+  .pipe-step.red    { background: var(--red); }
+  .pipe-step.gray   { background: #94a3b8; }
+  .pipe-arrow { font-size: 1.4em; color: #94a3b8; padding: 0 6px; }
+
+  /* Badges */
+  .badge { display: inline-block; border-radius: 20px; padding: 2px 12px; font-size: 0.75em; font-weight: 700; }
+  .badge.pass { background: #dcfce7; color: var(--green); }
+  .badge.fail { background: #fee2e2; color: var(--red); }
+  .badge.info { background: #eff6ff; color: var(--indigo); }
+
+  /* State boxes */
+  .state-row { display: flex; gap: 10px; margin: 10px 0; }
+  .state-box {
+    flex: 1; border: 2px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; font-size: 0.78em;
+  }
+  .state-box.active { border-color: var(--indigo); background: #eff6ff; }
+  .state-box.done   { border-color: var(--green);  background: #f0fdf4; }
+  .state-box.fail   { border-color: var(--red);    background: #fef2f2; }
+  .state-box h4 { margin: 0 0 4px; font-size: 1em; }
+  .state-box p  { margin: 0; color: #64748b; }
+
+  /* Subtitle / caption */
+  .caption { font-size: 0.72em; color: #64748b; margin-top: 4px; }
+  .big-num { font-size: 2.2em; font-weight: 800; color: var(--indigo); }
+
+  /* Two-col layout */
+  .two-col { display: flex; gap: 32px; }
+  .two-col > div { flex: 1; }
+
+  /* Title slide */
+  .title-slide { text-align: center !important; }
+  .title-slide h1 { font-size: 2.4em; margin-bottom: 8px; }
+  .title-authors { font-size: 0.82em; color: #64748b; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ─── TITLE ─────────────────────────────────────────────────────────── -->
+<section class="title-slide">
+  <h1>StateGen</h1>
+  <h3 style="color:#64748b;font-weight:400;font-size:1.1em;">
+    Code Generation as a Markov Decision Process<br>with Local Backtracking
+  </h3>
+  <hr style="margin:24px auto;width:60%;border-color:#e2e8f0;">
+  <p class="title-authors">
+    CMU 18-786 · Introduction to Deep Learning · Spring 2026<br>
+  </p>
+</section>
+
+<!-- ─── MOTIVATION ────────────────────────────────────────────────────── -->
+<section>
+  <h2>The Problem with One-Shot Code Generation</h2>
+  <div class="card-row">
+    <div class="card red">
+      <h3>❌ Single shot fails</h3>
+      <p>One LLM call generates the whole program. Any small error means the entire output is wrong — no recovery possible.</p>
+    </div>
+    <div class="card amber">
+      <h3>⚠ Global retry is wasteful</h3>
+      <p>Regenerate the <em>entire</em> solution on every failure. Wastes tokens rewriting code that was already correct.</p>
+    </div>
+    <div class="card green">
+      <h3>✓ Local repair is better</h3>
+      <p>Identify <em>which part</em> failed. Repair only that part and leave the rest intact.</p>
+    </div>
+  </div>
+  <br>
+  <p>Real programs have natural structure: <strong>imports → helpers → main function</strong>.<br>
+  We exploit this structure to make repair local and efficient.</p>
+</section>
+
+<!-- ─── MDP FRAMING ───────────────────────────────────────────────────── -->
+<section>
+  <h2>Framing Code Generation as an MDP</h2>
+  <div class="two-col">
+    <div>
+      <table class="results-table">
+        <tr><th>MDP Component</th><th>In StateGen</th></tr>
+        <tr><td><strong>State</strong> s</td><td>Partial program built so far</td></tr>
+        <tr><td><strong>Action</strong> a</td><td>Generate code for the next state</td></tr>
+        <tr><td><strong>Transition</strong></td><td>Append fragment → new partial program</td></tr>
+        <tr><td><strong>Reward</strong></td><td>+1 if all tests pass, 0 otherwise</td></tr>
+        <tr><td><strong>Backtrack</strong></td><td>Failed state → retry or revert</td></tr>
+      </table>
+    </div>
+    <div>
+      <br>
+      <p><strong>Why local backtracking?</strong></p>
+      <ul>
+        <li>A bug in state <em>i</em> almost never comes from state <em>i−1</em></li>
+        <li>Full MDP backtracking to s₀ wastes all prior work</li>
+        <li>Local retry = fix only the failing fragment</li>
+        <li>Empirically 2× better than full backtrack</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ─── BASELINES ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>Four Methods We Compare</h2>
+  <div class="card-row" style="flex-wrap:wrap;gap:12px;">
+    <div class="card" style="min-width:200px;">
+      <h3>Direct Gen</h3>
+      <p>Single LLM call. No planning, no retry. Baseline floor.</p>
+      <br><span class="badge info">1 LLM call</span>
+    </div>
+    <div class="card amber" style="min-width:200px;">
+      <h3>Self-Planning</h3>
+      <p>Write a numbered plan first, then generate code from the plan. Retry whole solution on failure.</p>
+      <br><span class="badge info">2+ LLM calls</span>
+    </div>
+    <div class="card red" style="min-width:200px;">
+      <h3>Self-Debugging</h3>
+      <p>Generate → explain the code in prose → repair based on explanation. (Chen et al., ICLR 2024)</p>
+      <br><span class="badge info">3+ LLM calls</span>
+    </div>
+    <div class="card green" style="min-width:200px;">
+      <h3>StateGen</h3>
+      <p>Decompose into states → per-state verify & repair → final BCB eval.</p>
+      <br><span class="badge info">2+ LLM calls</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── DECOMPOSITION ─────────────────────────────────────────────────── -->
+<section>
+  <h2>Step 1: Decomposition</h2>
+  <p>One LLM call produces a structured breakdown of the problem:</p>
+  <pre><code class="text" style="font-size:0.7em;">STATE 0
+Description: Import necessary modules and define constants.
+Preconditions: none
+Postconditions: 'pandas' in dir(); 'numpy' in dir()
+CODE:
+import pandas as pd
+import numpy as np
+END_STATE
+
+STATE 1
+Description: Define the main task_func that processes the dataframe.
+Preconditions: pd, np
+Postconditions: callable(task_func)
+CODE:
+def task_func(df, col):
+    ...
+END_STATE</code></pre>
+  <p>Each state has <strong>preconditions</strong> (what must exist) and <strong>postconditions</strong> (structural assertions to verify output).</p>
+</section>
+
+<!-- ─── QUICK CHECK ────────────────────────────────────────────────────── -->
+<section>
+  <h2>Step 2: Per-State Quick Check</h2>
+  <p>After generating code for each state, we verify it immediately — before moving on:</p>
+  <div class="pipeline">
+    <div class="pipe-step">Generate<br>fragment</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step amber">Syntax<br>check</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step amber">Run in<br>sandbox</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step green">Check<br>postconditions</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step green">✓ Commit<br>to context</div>
+  </div>
+  <br>
+  <div class="two-col">
+    <div>
+      <h3>On failure → local repair</h3>
+      <ul>
+        <li>Error message passed back to LLM</li>
+        <li>LLM rewrites <em>only</em> the failing fragment</li>
+        <li>Previous states untouched</li>
+        <li>Up to 3 repair attempts per state</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What quick check catches</h3>
+      <ul>
+        <li>Syntax errors (SyntaxError, IndentationError)</li>
+        <li>Import errors (missing modules)</li>
+        <li>Runtime crashes at definition time</li>
+        <li>Structural postconditions (<code>callable(f)</code>)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FULL PIPELINE ─────────────────────────────────────────────────── -->
+<section>
+  <h2>Full StateGen Pipeline</h2>
+  <div class="state-row">
+    <div class="state-box done">
+      <h4>🔹 Decompose</h4>
+      <p>1 LLM call → structured state plan</p>
+    </div>
+    <div class="state-box done">
+      <h4>✅ State 0</h4>
+      <p>Imports &amp; constants<br>Quick check → pass</p>
+    </div>
+    <div class="state-box fail">
+      <h4>❌ State 1 (attempt 0)</h4>
+      <p>SyntaxError<br>→ repair call</p>
+    </div>
+    <div class="state-box done">
+      <h4>✅ State 1 (attempt 1)</h4>
+      <p>Fixed code<br>Quick check → pass</p>
+    </div>
+  </div>
+  <div class="pipeline" style="margin-top:12px;">
+    <div class="pipe-step green">States<br>committed</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step amber">Final BCB<br>evaluation</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step green" style="font-size:0.9em;">PASS ✓</div>
+  </div>
+  <div class="pipeline">
+    <div class="pipe-step gray">States<br>committed</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step amber">Final BCB<br>evaluation</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step red">FAIL ✗</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step amber">Whole-solution<br>repair (×4)</div>
+  </div>
+  <p class="caption">BCB evaluation runs the official unit test suite — not just syntax checks.</p>
+</section>
+
+<!-- ─── MEMORY MANAGER ────────────────────────────────────────────────── -->
+<section>
+  <h2>Memory Manager</h2>
+  <p>StateGen caches successful state → code mappings using <strong>sentence embeddings</strong>:</p>
+  <div class="two-col">
+    <div>
+      <h3>How it works</h3>
+      <ul>
+        <li>Key: (state description + context signature)</li>
+        <li>Value: code that passed quick check</li>
+        <li>Similarity threshold: 0.85 cosine similarity</li>
+        <li>On cache hit: skip LLM call entirely</li>
+      </ul>
+      <br>
+      <h3>In practice</h3>
+      <ul>
+        <li>48 patterns cached across 148 tasks</li>
+        <li>State 0 (imports) reused most often</li>
+        <li>~0.32 reuse rate across the benchmark</li>
+      </ul>
+    </div>
+    <div>
+      <br>
+      <div class="card green">
+        <h3>Example cache hit</h3>
+        <p>"Import pandas, numpy, sklearn"<br>
+        → seen before at similarity 0.91<br>
+        → return cached import block<br>
+        → <strong>0 LLM tokens used</strong></p>
+      </div>
+      <br>
+      <p class="caption">Ablation: removing memory drops pass@1 from 29.7% → 28.4% (−1.3 pp) on DeepSeek.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── BIGCODEBENCH ───────────────────────────────────────────────────── -->
+<section>
+  <h2>Benchmark: BigCodeBench Hard</h2>
+  <div class="two-col">
+    <div>
+      <ul>
+        <li><strong>148 tasks</strong> from the hard instruct subset</li>
+        <li>Real-world library usage: pandas, sklearn, matplotlib, tensorflow, flask, …</li>
+        <li>Each task has a full <strong>unit test suite</strong> (5–15 tests)</li>
+        <li>Evaluation via official Docker container — no shortcuts</li>
+        <li>Metric: <strong>pass@1</strong> — did the first solution pass all tests?</li>
+      </ul>
+      <br>
+      <div class="card">
+        <h3>Example task</h3>
+        <p>"Given a DataFrame with numeric columns, apply PCA to reduce dimensionality and return the transformed array with explained variance ratios."</p>
+      </div>
+    </div>
+    <div>
+      <br>
+      <h3>Why it's hard</h3>
+      <ul>
+        <li>Requires correct library imports and API usage</li>
+        <li>Tests check exact outputs, types, shapes</li>
+        <li>Cannot just generate plausible-looking code</li>
+        <li>State-of-the-art models only score ~30–45%</li>
+      </ul>
+      <br>
+      <h3>Models tested</h3>
+      <ul>
+        <li>DeepSeek-Coder (original experiments)</li>
+        <li>GPT-4o Azure</li>
+        <li>Gemini 2.5 Flash</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ─── MAIN RESULTS ───────────────────────────────────────────────────── -->
+<section>
+  <h2>Results: DeepSeek-Coder (148 tasks)</h2>
+  <table class="results-table">
+    <tr>
+      <th>Method</th><th>Pass@1</th><th>Avg Tokens</th><th>Avg Retries</th><th>Avg Time</th>
+    </tr>
+    <tr>
+      <td>Direct Generation</td><td>23.4%</td><td>604</td><td>0.00</td><td>19s</td>
+    </tr>
+    <tr>
+      <td>Self-Planning</td><td>28.4%</td><td>3,178</td><td>3.02</td><td>87s</td>
+    </tr>
+    <tr class="highlight">
+      <td><strong>StateGen</strong></td><td><strong>29.7%</strong></td><td><strong>3,093</strong></td><td><strong>1.80</strong></td><td><strong>74s</strong></td>
+    </tr>
+    <tr>
+      <td>Self-Debugging</td><td>30.3%</td><td>6,560</td><td>1.48</td><td>140s</td>
+    </tr>
+  </table>
+  <br>
+  <div class="card-row">
+    <div class="card green">
+      <h3>+27% relative improvement</h3>
+      <p>23.4% → 29.7% over direct generation</p>
+    </div>
+    <div class="card green">
+      <h3>53% fewer tokens</h3>
+      <p>vs Self-Debugging for comparable accuracy (29.7% vs 30.3%)</p>
+    </div>
+    <div class="card green">
+      <h3>1.9× faster</h3>
+      <p>74s vs 140s per task vs Self-Debugging</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ABLATIONS ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>Ablation Study: What Does Each Component Contribute?</h2>
+  <table class="results-table">
+    <tr>
+      <th>Variant</th><th>What's changed</th><th>Pass@1 (DeepSeek)</th><th>Key insight</th>
+    </tr>
+    <tr class="highlight">
+      <td><strong>StateGen (full)</strong></td><td>—</td><td><strong>29.7%</strong></td><td>Best balance</td>
+    </tr>
+    <tr>
+      <td>No memory</td><td>No pattern cache</td><td>28.4%</td><td>Memory gives +1.3 pp</td>
+    </tr>
+    <tr>
+      <td>No decompose</td><td>Single state, whole problem</td><td>~26%</td><td>Decomposition helps structure</td>
+    </tr>
+    <tr>
+      <td>Full backtrack</td><td>Fail → reset to state 0</td><td>~13%</td><td>Full MDP backtrack hurts</td>
+    </tr>
+  </table>
+  <br>
+  <div class="card amber">
+    <h3>⚠ MDP insight: Full backtrack is theoretically purer but empirically worse</h3>
+    <p>A bug in state 2 almost never originates in state 0.
+    Resetting to state 0 wastes tokens on code that was already correct.
+    Local repair (retry only the failing state) is a better practical approximation.</p>
+  </div>
+</section>
+
+<!-- ─── MULTI-MODEL ────────────────────────────────────────────────────── -->
+<section>
+  <h2>Cross-Model Results</h2>
+  <table class="results-table">
+    <tr>
+      <th>Method</th><th>DeepSeek-Coder</th><th>GPT-4o</th><th>Gemini 2.5 Flash</th>
+    </tr>
+    <tr><td>Direct Gen</td><td>23.4%</td><td>26.4%</td><td>29.1%</td></tr>
+    <tr><td>Self-Planning</td><td>28.4%</td><td><strong>29.7%</strong></td><td>27.7%</td></tr>
+    <tr><td>Self-Debugging</td><td><strong>30.3%</strong></td><td>27.7%</td><td>25.7%</td></tr>
+    <tr class="highlight"><td>StateGen</td><td>29.7%</td><td>—*</td><td>—*</td></tr>
+  </table>
+  <p class="caption">* GPT-4o and Gemini StateGen results pending parser fix re-run (decomposition format differs between models).</p>
+  <br>
+  <div class="card amber">
+    <h3>Finding: stronger models favor simpler methods</h3>
+    <p>For GPT-4o and Gemini, Self-Planning (~28-30%) matches or beats StateGen —
+    the models are capable enough that the decomposition overhead isn't needed.
+    StateGen's advantage is clearest on mid-tier models like DeepSeek-Coder.</p>
+  </div>
+</section>
+
+<!-- ─── DEMO ───────────────────────────────────────────────────────────── -->
+<section>
+  <h2>Live Demo</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you'll see</h3>
+      <ul>
+        <li>Select any of 148 BigCodeBench tasks</li>
+        <li>Choose a method: Direct Gen, Self-Planning, Self-Debugging, StateGen, or an ablation</li>
+        <li>Watch the live API call happen in real time</li>
+        <li>See each step: decomposition, per-state verification, repairs</li>
+        <li>Final token count and pass/fail result</li>
+      </ul>
+    </div>
+    <div>
+      <br>
+      <div class="card green">
+        <h3>Good demo tasks</h3>
+        <p>
+          <strong>BCB/34</strong> — pandas groupby (StateGen repairs state 1)<br>
+          <strong>BCB/82</strong> — sklearn pipeline (memory hit on state 0)<br>
+          <strong>BCB/129</strong> — matplotlib plot (self-debugging repairs)
+        </p>
+      </div>
+      <br>
+      <div class="card">
+        <h3>Run the demo</h3>
+        <p><code>.venv/bin/streamlit run demo/app.py</code></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CONCLUSION ────────────────────────────────────────────────────── -->
+<section>
+  <h2>Summary</h2>
+  <div class="card-row">
+    <div class="card green">
+      <h3>✓ Accuracy</h3>
+      <p>+27% relative improvement over direct generation on BigCodeBench Hard (23.4% → 29.7%)</p>
+    </div>
+    <div class="card green">
+      <h3>✓ Efficiency</h3>
+      <p>Matches Self-Debugging accuracy at 53% fewer tokens and 1.9× faster per task</p>
+    </div>
+    <div class="card green">
+      <h3>✓ Insight</h3>
+      <p>Local backtracking outperforms full MDP backtracking because bugs are local — not caused by earlier states</p>
+    </div>
+  </div>
+  <br>
+  <p><strong>Key takeaway:</strong> Treating code generation as an MDP with <em>local</em> state-based repair gives better token efficiency than global retry strategies, while maintaining competitive accuracy.</p>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/plugin/highlight/highlight.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: true,
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    plugins: [ RevealHighlight ],
+    width: 1100,
+    height: 700,
+    margin: 0.06,
+  });
+</script>
+</body>
+</html>

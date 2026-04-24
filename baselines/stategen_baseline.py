@@ -131,11 +131,20 @@ def _parse_decomposition(raw: str) -> List[Tuple[State, str]]:
     """
     Parse the LLM's decomposition output into (State, code_block) pairs.
 
-    Postconditions are semicolon-separated executable Python assertions
-    (updated from the old comma-separated natural-language descriptions).
+    Handles two common output styles:
+      - Structured: CODE:/END_STATE delimiters (prompt-compliant)
+      - Markdown:   ```python fences without CODE:/END_STATE (GPT-4o, Gemini)
+
+    Postconditions are semicolon-separated executable Python assertions.
     """
     results: List[Tuple[State, str]] = []
-    blocks = re.split(r'\bEND_STATE\b', raw)
+
+    # Split on END_STATE when present; otherwise split on the next STATE header.
+    if re.search(r'\bEND_STATE\b', raw):
+        blocks = re.split(r'\bEND_STATE\b', raw)
+    else:
+        # Use a look-ahead so each block starts with its own STATE header.
+        blocks = re.split(r'(?=(?:#+\s*)?\bSTATE\s+\d+\b)', raw, flags=re.IGNORECASE)
 
     for block in blocks:
         block = block.strip()
@@ -149,7 +158,7 @@ def _parse_decomposition(raw: str) -> List[Tuple[State, str]]:
 
         def _field(label: str) -> str:
             m = re.search(rf'^{label}:\s*(.+)', block, re.IGNORECASE | re.MULTILINE)
-            return m.group(1).strip() if m else ""
+            return m.group(1).strip().strip("`") if m else ""
 
         def _list_field(label: str) -> List[str]:
             raw_val = _field(label)
@@ -158,25 +167,37 @@ def _parse_decomposition(raw: str) -> List[Tuple[State, str]]:
             return [x.strip() for x in raw_val.split(",") if x.strip()]
 
         def _semi_list_field(label: str) -> List[str]:
-            """Semicolon-separated list (used for postconditions)."""
             raw_val = _field(label)
             if not raw_val or raw_val.lower() in ("none", "n/a", "-"):
                 return []
-            return [x.strip() for x in raw_val.split(";") if x.strip()]
+            # Strip inline backticks that GPT-4o adds around assertion expressions.
+            parts = [x.strip().strip("`") for x in raw_val.split(";") if x.strip()]
+            return [p for p in parts if p]
 
         desc = _field("Description")
         if not desc:
             continue
 
+        # Primary: CODE: label (prompt-compliant models).
         code_m = re.search(r'CODE:\s*\n(.*)', block, re.DOTALL | re.IGNORECASE)
-        code = code_m.group(1).strip() if code_m else ""
-        code = extract_code(code) if code.startswith("```") else code
+        if code_m:
+            code = code_m.group(1).strip()
+            code = extract_code(code) if code.startswith("```") else code
+        else:
+            # Fallback 1: closed ```python ... ``` fence.
+            fence_m = re.search(r'```(?:python)?\s*\n(.*?)```', block, re.DOTALL)
+            if fence_m:
+                code = fence_m.group(1).strip()
+            else:
+                # Fallback 2: unclosed fence (truncated output) — take everything after opening ```.
+                open_m = re.search(r'```(?:python)?\s*\n(.*)', block, re.DOTALL)
+                code = open_m.group(1).strip() if open_m else ""
 
         state = State(
             index=idx,
             description=desc,
             preconditions=_list_field("Preconditions"),
-            postconditions=_semi_list_field("Postconditions"),   # executable assertions
+            postconditions=_semi_list_field("Postconditions"),
         )
         results.append((state, code))
 

@@ -111,8 +111,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--provider",
         default=LLM_PROVIDER,
-        choices=["openai", "anthropic", "openai_compatible"],
+        choices=["openai", "anthropic", "openai_compatible", "azure_openai"],
         help="LLM API provider (default: %(default)s).",
+    )
+    p.add_argument(
+        "--api_version",
+        default=None,
+        help="API version for azure_openai provider (default: 2024-12-01-preview).",
     )
     p.add_argument(
         "--model",
@@ -450,6 +455,7 @@ def main() -> None:
         tracker=tracker,
         api_key=args.api_key,
         base_url=args.base_url,
+        api_version=getattr(args, "api_version", None),
     )
     executor = ExecutionEngine()
 
